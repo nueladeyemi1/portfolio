@@ -1,5 +1,54 @@
 'use strict';
 
+// Title transition effect
+document.addEventListener('DOMContentLoaded', function() {
+  const titleElement = document.getElementById('changing-title');
+  const titles = ['Software Engineer', 'Mechanical Engineer'];
+  let currentIndex = 0;
+  
+  // Create a span for the changing text inside the title element
+  titleElement.innerHTML = '<span class="changing-text">' + titles[currentIndex] + '</span>';
+  const textSpan = titleElement.querySelector('.changing-text');
+  
+  // Add CSS for the text transition
+  const style = document.createElement('style');
+  style.textContent = `
+    .changing-text {
+      display: inline-block;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+    }
+    .changing-text.fade-out {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .changing-text.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  `;
+  document.head.appendChild(style);
+  
+  function changeTitle() {
+    // Fade out text only
+    textSpan.classList.add('fade-out');
+    
+    // After fade out, change text and fade in
+    setTimeout(() => {
+      currentIndex = (currentIndex + 1) % titles.length;
+      textSpan.textContent = titles[currentIndex];
+      textSpan.classList.remove('fade-out');
+      textSpan.classList.add('fade-in');
+      
+      // Remove the fade-in class after animation completes
+      setTimeout(() => {
+        textSpan.classList.remove('fade-in');
+      }, 500);
+    }, 500);
+  }
+  
+  // Change title every 5 seconds
+  setInterval(changeTitle, 5000);
+});
 
 
 // element toggle function
