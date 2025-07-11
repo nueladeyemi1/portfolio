@@ -120,6 +120,25 @@ for (let i = 0; i < selectItems.length; i++) {
     selectValue.innerText = this.innerText;
     elementToggleFunc(select);
     filterFunc(selectedValue);
+    
+    // Update URL with the category parameter
+    const url = new URL(window.location);
+    if (selectedValue === 'all') {
+      url.searchParams.delete('category');
+    } else {
+      url.searchParams.set('category', selectedValue);
+    }
+    window.history.pushState({}, '', url);
+    
+    // Update the active filter button
+    for (let j = 0; j < filterBtn.length; j++) {
+      if (filterBtn[j].innerText.toLowerCase() === selectedValue) {
+        lastClickedBtn.classList.remove("active");
+        filterBtn[j].classList.add("active");
+        lastClickedBtn = filterBtn[j];
+        break;
+      }
+    }
 
   });
 }
@@ -153,6 +172,15 @@ for (let i = 0; i < filterBtn.length; i++) {
     let selectedValue = this.innerText.toLowerCase();
     selectValue.innerText = this.innerText;
     filterFunc(selectedValue);
+
+    // Update URL with the category parameter
+    const url = new URL(window.location);
+    if (selectedValue === 'all') {
+      url.searchParams.delete('category');
+    } else {
+      url.searchParams.set('category', selectedValue);
+    }
+    window.history.pushState({}, '', url);
 
     lastClickedBtn.classList.remove("active");
     this.classList.add("active");
@@ -189,20 +217,92 @@ for (let i = 0; i < formInputs.length; i++) {
 const navigationLinks = document.querySelectorAll("[data-nav-link]");
 const pages = document.querySelectorAll("[data-page]");
 
-// add event to all nav link
-for (let i = 0; i < navigationLinks.length; i++) {
-  navigationLinks[i].addEventListener("click", function () {
+// Function to navigate to a specific page
+function navigateToPage(pageName, category = null) {
+  // Update URL with the page parameter
+  const url = new URL(window.location);
+  url.searchParams.set('tab', pageName);
+  
+  // Add category parameter if provided
+  if (category) {
+    url.searchParams.set('category', category);
+  } else {
+    url.searchParams.delete('category');
+  }
+  
+  window.history.pushState({}, '', url);
 
+  // Activate the correct page and navigation link
+  for (let i = 0; i < pages.length; i++) {
+    if (pageName === pages[i].dataset.page) {
+      pages[i].classList.add("active");
+      navigationLinks[i].classList.add("active");
+      window.scrollTo(0, 0);
+      
+      // If we're navigating to portfolio and have a category, filter the projects
+      if (pageName === 'portfolio' && category) {
+        // Apply the filter after a short delay to ensure the page is loaded
+        setTimeout(() => {
+          filterFunc(category);
+          
+          // Update the filter buttons UI
+          for (let j = 0; j < filterBtn.length; j++) {
+            if (filterBtn[j].innerText.toLowerCase() === category) {
+              lastClickedBtn.classList.remove("active");
+              filterBtn[j].classList.add("active");
+              lastClickedBtn = filterBtn[j];
+              
+              // Update select value if it exists
+              if (selectValue) {
+                selectValue.innerText = filterBtn[j].innerText;
+              }
+              break;
+            }
+          }
+        }, 100);
+      }
+    } else {
+      pages[i].classList.remove("active");
+      navigationLinks[i].classList.remove("active");
+    }
+  }
+}
+
+// Check URL parameters on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab');
+  const categoryParam = urlParams.get('category');
+  
+  if (tabParam) {
+    // Check if the tab parameter matches any page
+    let pageExists = false;
     for (let i = 0; i < pages.length; i++) {
-      if (this.innerHTML.toLowerCase() === pages[i].dataset.page) {
-        pages[i].classList.add("active");
-        navigationLinks[i].classList.add("active");
-        window.scrollTo(0, 0);
-      } else {
-        pages[i].classList.remove("active");
-        navigationLinks[i].classList.remove("active");
+      if (tabParam === pages[i].dataset.page) {
+        pageExists = true;
+        break;
       }
     }
+    
+    if (pageExists) {
+      navigateToPage(tabParam, categoryParam);
+    }
+  }
+});
 
+// add event to all nav links
+for (let i = 0; i < navigationLinks.length; i++) {
+  navigationLinks[i].addEventListener("click", function () {
+    const pageName = this.innerHTML.toLowerCase();
+    
+    // Clear category parameter when navigating away from portfolio
+    if (pageName !== 'portfolio') {
+      navigateToPage(pageName);
+    } else {
+      // When navigating to portfolio, check if there's a category in the URL to preserve
+      const urlParams = new URLSearchParams(window.location.search);
+      const categoryParam = urlParams.get('category');
+      navigateToPage(pageName, categoryParam);
+    }
   });
 }
